@@ -14,7 +14,7 @@ Tool to resize images in bathes made in Python 3.87 and pyqt 6
 - [x] images can be upscaled or downscaled
 - [x] Lanchos is used for resampling
 - [x] resizing can be done by pixels, percent
-- [x] if resize in pixels aspect ratio can be chosen
+- [x] if path to get and save images will be the same new folder -> `resized` will be created
 
 ### used packages
 - [PIL 10.1.0](https://python-pillow.org/)

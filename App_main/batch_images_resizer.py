@@ -1,5 +1,4 @@
 import os
-import stat
 import sys
 
 import PyQt6.QtWidgets as qtw
@@ -8,18 +7,11 @@ from UI.resize_images_in_batches_ui import Ui_mw_window
 
 
 class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
-    files_path, save_path = '', ''
-    width_pix, heigth_pix = 0, 0
-    width_perc, heigth_perc = 0, 0
-    old_width, old_height = 0, 0
+    files_path, save_path, img_name, img_ext = '', '', '', ''
     new_width, new_heigth = 0, 0
-    pix_work: bool = False
-    perc_work: bool = False
+    
+    pix_work, perc_work, gb_pix_sharp, gb_perc_sharp = False, False, False, False
     sharp: float = 0.0
-
-    gb_pix_sharp: bool = False
-    gb_perc_sharp: bool = False
-    img_name, img_ext = '', ''
 
     
     def __init__(self):
@@ -37,6 +29,7 @@ class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
         self.gb_sharpness_percent.toggled.connect(self.gb_sharp_perc)
 
         self.pb_main_resize.clicked.connect(self.resize_images)
+        self.pb_main_cancel.clicked.connect(self.close)
 
     
     def get_images_path(self):
@@ -46,18 +39,15 @@ class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
     def get_save_images_path(self):
         s_path = qtw.QFileDialog.getExistingDirectory()
         if s_path == self.files_path:
-            self.lb_message.setText('Select different folder')
-            # new_s_path = os.path.join(s_path, 'resized')
-            # os.mkdir(new_s_path)
-            # os.chmod(new_s_path, stat.S_IWRITE)
-            # os.unlink(new_s_path)
-        #     self.save_path = new_s_path
-        #     self.lb_save_images_path.setText(new_s_path)
+            self.lb_message.setText("folder 'resized' is added to save path")
+            new_s_path = os.path.join(s_path, 'resized')
+            os.mkdir(new_s_path)
+            self.save_path = new_s_path
+            self.lb_save_images_path.setText(new_s_path)
         else:
             self.save_path = s_path
             self.lb_save_images_path.setText(self.save_path)
             self.lb_message.clear()
-            # print(self.save_path)
     
     def reset_paths(self):
         self.lb_get_images_path.clear()
@@ -79,7 +69,11 @@ class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
                 self.new_heigth = int(self.le_pixels_height.text())
                 self.pix_work = True
                 self.perc_work = False
-                self.lb_message.clear()
+                self.lb_message.setText(
+                    'new dimention of the images will be [{}px, {}px] '.format(
+                        self.le_pixels_width.text(),
+                        self.le_pixels_height.text()
+                        ))
         else:
             self.lb_message.setText('width and height has to be filled in')
         
@@ -97,22 +91,20 @@ class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
     def pixels_reset(self):
         self.le_pixels_width.clear()
         self.le_pixels_height.clear()
-        self.width_pix = 0
-        self.heigth_pix = 0
         self.sharp = 0
-        self.rb_04_pix.setChecked()
+        self.rb_04_pix.setChecked(True)
         self.gb_sharpness_pixels.setChecked(False)
     
     def percent_setup(self):
         if len(self.le_percent_width.text()) and\
             len(self.le_percent_height.text()):
-                self.new_width = int(
-                    (float(self.le_percent_width.text()) / 100) * self.old_width)
-                self.new_heigth = int(
-                    (float(self.le_percent_height.text()) / 100) * self.old_width)
                 self.pix_work = False
                 self.perc_work = True
-                self.lb_message.clear()
+                self.lb_message.setText(
+                    'new dimentions will be [{}%, {}%] of the original'.format(
+                        self.le_percent_width.text(),
+                        self.le_percent_height.text()
+                        ))
         else:
             self.lb_message.setText('width and height has to be filled in')
     
@@ -130,49 +122,60 @@ class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
     def percent_reset(self):
         self.le_percent_width.clear()
         self.le_percent_height.clear()
-        self.width_perc = 0
-        self.heigth_perc = 0
         self.sharp = 0
-        self.rb_04_perc.isChecked()
+        self.rb_04_perc.setChecked(True)
         self.gb_sharpness_percent.setChecked(False)
 
     def resize_images(self):
         for image in os.listdir(self.files_path):
             try:
-                self.img_name, self.img_ext = image.split('.')
+                img_name, img_ext = image.split('.')
+                if self.pix_work:
+                    with Image.open(os.path.join(self.files_path, image)) as im:
+                        img = im.resize(
+                            (self.new_width, self.new_heigth),
+                            resample=Image.Resampling.LANCZOS,
+                        )
+                        if self.sharp > 0:
+                            img = ImageEnhance.Sharpness(img)
+                            img = img.enhance(1 + self.sharp)
+                        
+                        img.save(
+                            os.path.join(
+                                self.save_path,
+                                '{}.{}'.format(img_name, img_ext)
+                                )
+                            )
+                elif self.perc_work:
+                    with Image.open(os.path.join(self.files_path, image)) as im:
+                        self.new_width = int(
+                            (
+                                float(self.le_percent_width.text()) / 100
+                                ) * im.width)
+                        self.new_heigth = int(
+                            (
+                                float(self.le_percent_height.text()) / 100
+                                ) * im.height)
+                                
+                        img = im.resize(
+                            (self.new_width, self.new_heigth),
+                            resample=Image.Resampling.LANCZOS,
+                        )
+                        if self.sharp > 0:
+                            img = ImageEnhance.Sharpness(img)
+                            img = img.enhance(1 + self.sharp)
+                        
+                        img.save(
+                            os.path.join(
+                                self.save_path,
+                                '{}.{}'.format(img_name, img_ext)
+                                )
+                            )
             except:
                 pass
-
-            with Image.open(os.path.join(self.files_path, image)) as im:
-                self.old_width = im.width
-                self.old_height = im.height
-                
-                img = im.resize(
-                    (self.new_width, self.new_heigth),
-                    resample=Image.Resampling.LANCZOS,
-                )
-                if self.sharp > 0:
-                    img = ImageEnhance.Sharpness(img)
-                    img = img.enhance(1 + self.sharp)
-                
-                img.save(os.path.join(
-                    self.save_path,
-                    f'{self.img_name}.{self.img_ext}'
-                )
-                    )
-                    
-
-
-        # print(os.listdir(self.files_path))
+        self.lb_message.setText('Images resized, check folder')
     
     
-
-    
-
-
-
-
-
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
