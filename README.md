@@ -4,8 +4,8 @@ Tool to resize images in bathes made in Python 3.87 and pyqt 6
 
 ## ui examples
 <p align="middle">
-  <img src="" width="30%"/>
-  <img src="" width="30%"/>
+  <img src="https://github.com/piotrekgelert/batch-image-resizer/blob/main/images/pixels.png" width="30%"/>
+  <img src="https://github.com/piotrekgelert/batch-image-resizer/blob/main/images/percent.png" width="30%"/>
 </p>
 
 ### notes
