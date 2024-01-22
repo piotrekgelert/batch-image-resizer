@@ -6,7 +6,6 @@ Tool to resize images in bathes made in Python 3.87 and pyqt 6
 <p align="middle">
   <img src="" width="30%"/>
   <img src="" width="30%"/>
-  <img src="" width="30%"/>
 </p>
 
 ### notes

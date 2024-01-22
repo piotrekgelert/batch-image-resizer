@@ -70,7 +70,7 @@ class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
                 self.pix_work = True
                 self.perc_work = False
                 self.lb_message.setText(
-                    'new dimention of the images will be [{}px, {}px] '.format(
+                    'new dimentions of the images will be [{}px, {}px] '.format(
                         self.le_pixels_width.text(),
                         self.le_pixels_height.text()
                         ))
@@ -101,7 +101,7 @@ class BatchImageResizer(qtw.QMainWindow, Ui_mw_window):
                 self.pix_work = False
                 self.perc_work = True
                 self.lb_message.setText(
-                    'new dimentions will be [{}%, {}%] of the original'.format(
+                    'new dimentions will be [{}%, {}%] of the original image'.format(
                         self.le_percent_width.text(),
                         self.le_percent_height.text()
                         ))
